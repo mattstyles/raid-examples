@@ -83,29 +83,61 @@ raf().on( 'data', dt => tick.dispatch({
  */
 tick.register( src => {
   // In this case gravity depletes velocity
-  const gravity = src
-    .map( event => () => {
-      event.model.update( model => {
-        return model.merge({
-          vy: model.y > 0 ? model.vy - event.delta * .25 : 0
-        })
-      })
-    })
+  // const gravity = src
+  //   .map( event => () => {
+  //     event.model.update( model => {
+  //       return model.merge({
+  //         vy: model.y > 0 ? model.vy - event.delta * .25 : 0
+  //       })
+  //     })
+  //   })
+  //
+  // const physics = src
+  //   .map( event => () => {
+  //     event.model.update( model => {
+  //       return model.merge({
+  //         x: model.x + event.delta * model.vx,
+  //         y: Math.max( 0, model.y + event.delta * model.vy ),
+  //         vx: 0
+  //       })
+  //     })
+  //   })
+  //
+  // Order IS important, this is not functional composition although changes
+  // to models in earlier functions do propagate
+  // return Observable.merge( [ physics, gravity ] )
+  //   .subscribe( action => action() )
 
-  const physics = src
-    .map( event => () => {
-      event.model.update( model => {
-        return model.merge({
-          x: model.x + event.delta * model.vx,
-          y: Math.max( 0, model.y + event.delta * model.vy ),
-          vx: 0 
-        })
-      })
+  // Updates accept mutable versions of models
+  const physics = ( dt, model ) => {
+    return Object.assign( model, {
+      x: model.x + dt * model.vx,
+      y: Math.max( 0, model.y + dt * model.vy ),
+      vx: 0
     })
+  }
 
-    // Order IS important
-  return Observable.merge( [ physics, gravity ] )
-    .subscribe( action => action() )
+  // Values are regular JS mutable objects
+  const gravity = ( dt, model ) => {
+    return Object.assign( model, {
+      vy: model.y > 0 ? model.vy - dt * .25 : 0
+    })
+  }
+
+
+
+  const update = src
+    .subscribe( event => {
+
+      // Updates the model with the new model
+      function compose( model ) {
+        // Perform mutation
+        event.model.merge( model )
+      }
+
+      // @TODO mmm, composition, needs a little jiggling
+      compose( gravity( event.delta, physics( event.delta, event.model.toJS() ) ) )
+    })
 })
 
 /**
@@ -133,8 +165,8 @@ styles.spaceman = {
 const Spaceman = props => {
   const data = spaceman.cursor()
   var pos = Object.assign( {}, styles.spaceman, {
-    top: data.get( 'y' ),
-    left: data.get( 'x' )
+    top: 200 - data.get( 'y' ),
+    left: 200 + data.get( 'x' )
   })
   return (
     <div style={ pos }></div>

@@ -18,14 +18,16 @@ const Model = new Immutable.Record({
   x: 0,
   y: 0,
   vx: 0,
-  vy: 0
+  vy: 0,
+  dir: ''
 })
 
-let spaceman = state.create( 'spaceman', new Model({
+let mario = state.create( 'mario', new Model({
   x: 0,
   y: 0,
   vx: 0,
-  vy: 0
+  vy: 0,
+  dir: 'right'
 }))
 
 
@@ -33,7 +35,7 @@ let spaceman = state.create( 'spaceman', new Model({
  * Key Signal
  */
 const keys = new Signal({
-  model: spaceman
+  model: mario
 })
 
 quay.on( '<up>', event => keys.dispatch( '<up>' ) )
@@ -43,6 +45,8 @@ quay.on( '<right>', event => keys.dispatch( '<right>' ) )
 
 /**
  * Key Update
+ * ---
+ * This example uses a merged observable to mutate state
  */
 keys.register( src => {
   const jump = src
@@ -52,14 +56,16 @@ keys.register( src => {
       return !( y && vy )
     })
     .map( event => () => {
-      event.model.cursor( 'vy' ).update( vy => 6 )
+      event.model.cursor( 'vy' ).update( vy => 7.5 )
     })
 
   const walk = src
     .filter( event => /left|right/.test( event.type ) )
     .map( event => () => {
-      event.model.cursor( 'vx' ).update( vx => {
-        return /left/.test( event.type ) ? -1 : 1
+      let left = /left/.test( event.type )
+      event.model.merge({
+        vx: left ? -1 : 1,
+        dir: left ? 'left' : 'right'
       })
     })
 
@@ -71,7 +77,7 @@ keys.register( src => {
  * Tick signal
  */
 const tick = new Signal({
-  model: spaceman
+  model: mario
 })
 
 raf().on( 'data', dt => tick.dispatch({
@@ -80,40 +86,16 @@ raf().on( 'data', dt => tick.dispatch({
 
 /**
  * Tick Update
+ * ---
+ * This example uses functional composition to mutate state
  */
 tick.register( src => {
-  // In this case gravity depletes velocity
-  // const gravity = src
-  //   .map( event => () => {
-  //     event.model.update( model => {
-  //       return model.merge({
-  //         vy: model.y > 0 ? model.vy - event.delta * .25 : 0
-  //       })
-  //     })
-  //   })
-  //
-  // const physics = src
-  //   .map( event => () => {
-  //     event.model.update( model => {
-  //       return model.merge({
-  //         x: model.x + event.delta * model.vx,
-  //         y: Math.max( 0, model.y + event.delta * model.vy ),
-  //         vx: 0
-  //       })
-  //     })
-  //   })
-  //
-  // Order IS important, this is not functional composition although changes
-  // to models in earlier functions do propagate
-  // return Observable.merge( [ physics, gravity ] )
-  //   .subscribe( action => action() )
-
   // Updates accept mutable versions of models
   const physics = ( dt, model ) => {
     return Object.assign( model, {
       x: model.x + dt * model.vx,
       y: Math.max( 0, model.y + dt * model.vy ),
-      vx: 0
+      vx: Math.abs( model.vx ) < .25 ? 0 : model.vx * .75
     })
   }
 
@@ -123,7 +105,6 @@ tick.register( src => {
       vy: model.y > 0 ? model.vy - dt * .25 : 0
     })
   }
-
 
 
   const update = src
@@ -152,24 +133,29 @@ styles.container = {
   left: 0,
   background: 'rgb( 78, 74, 78 )'
 }
-styles.spaceman = {
+styles.mario = {
   position: 'absolute',
   top: 0,
   left: 0,
-  width: 32,
-  height: 32,
-  background: 'rgb( 208, 70, 72 )',
-  borderRadius: 200
+  width: 25,
+  height: 45
 }
 
-const Spaceman = props => {
-  const data = spaceman.cursor()
-  var pos = Object.assign( {}, styles.spaceman, {
+const Mario = props => {
+  const data = mario.cursor()
+  let pos = Object.assign( {}, styles.mario, {
     top: 200 - data.get( 'y' ),
     left: 200 + data.get( 'x' )
   })
+  let verb = 'stand'
+  if ( data.get( 'vx' ) !== 0 ) {
+    verb = 'walk'
+  }
+  if ( data.get( 'y' ) > 0 ) {
+    verb = 'jump'
+  }
   return (
-    <div style={ pos }></div>
+    <img style={ pos } src={ `/mario/imgs/${ verb }-${ data.get( 'dir' ) }.gif` } />
   )
 }
 
@@ -177,9 +163,10 @@ const App = props => {
   return (
     <div style={ styles.container }>
       <pre>
-        { JSON.stringify( spaceman.cursor().toJSON(), null, '  ' ) }
+        Model: 
+        { JSON.stringify( mario.cursor().toJSON(), null, '  ' ) }
       </pre>
-      <Spaceman />
+      <Mario />
     </div>
   )
 }

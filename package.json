@@ -5,7 +5,7 @@
   "description": "Collection of examples using raid",
   "main": "index.js",
   "scripts": {
-    "start": "budo spaceman --live"
+    "start": "budo mario --live"
   },
   "browserify": {
     "transform": "babelify"

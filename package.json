@@ -13,6 +13,9 @@
   "babel": {
     "presets": [
       "urban"
+    ],
+    "plugins": [
+      "transform-runtime"
     ]
   },
   "dependencies": {
@@ -21,11 +24,13 @@
     "quay": "^0.3.0",
     "raf-stream": "^3.0.0",
     "raid": "^0.4.0",
+    "ramda": "^0.21.0",
     "react": "^15.0.1",
     "react-dom": "^15.0.1",
     "rx-lite": "^4.0.8"
   },
   "devDependencies": {
+    "babel-plugin-transform-runtime": "^6.7.5",
     "babel-preset-urban": "^0.5.0",
     "babelify": "^7.2.0",
     "browserify": "^13.0.0",

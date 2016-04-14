@@ -4,6 +4,7 @@ import { render } from 'react-dom'
 import { Observable } from 'rx-lite'
 import Immutable from 'immutable'
 import { State, Signal } from 'raid'
+import { curry } from 'ramda'
 import raf from 'raf-stream'
 import Quay from 'quay'
 
@@ -91,33 +92,38 @@ raf().on( 'data', dt => tick.dispatch({
  */
 tick.register( src => {
   // Updates accept mutable versions of models
-  const physics = ( dt, model ) => {
+  const physics = curry( ( dt, model ) => {
     return Object.assign( model, {
       x: model.x + dt * model.vx,
       y: Math.max( 0, model.y + dt * model.vy ),
       vx: Math.abs( model.vx ) < .25 ? 0 : model.vx * .75
     })
-  }
+  })
 
   // Values are regular JS mutable objects
-  const gravity = ( dt, model ) => {
+  const gravity = curry( ( dt, model ) => {
     return Object.assign( model, {
       vy: model.y > 0 ? model.vy - dt * .25 : 0
     })
+  })
+
+  function compose() {
+    let fns = Array.from( arguments )
+    return function exec( model ) {
+      return fns.reduce( ( m, fn ) => {
+        return fn( m )
+      }, model )
+    }
   }
 
-
-  const update = src
+  const release = src
     .subscribe( event => {
+      let update = compose(
+        physics( event.delta ),
+        gravity( event.delta )
+      )
 
-      // Updates the model with the new model
-      function compose( model ) {
-        // Perform mutation
-        event.model.merge( model )
-      }
-
-      // @TODO mmm, composition, needs a little jiggling
-      compose( gravity( event.delta, physics( event.delta, event.model.toJS() ) ) )
+      event.model.merge( update( event.model.toJS() ) )
     })
 })
 
@@ -163,7 +169,7 @@ const App = props => {
   return (
     <div style={ styles.container }>
       <pre>
-        Model: 
+        Model:
         { JSON.stringify( mario.cursor().toJSON(), null, '  ' ) }
       </pre>
       <Mario />

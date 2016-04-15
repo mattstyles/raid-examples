@@ -5,11 +5,13 @@ import { Observable } from 'rx-lite'
 import Immutable from 'immutable'
 import { State, Signal } from 'raid'
 import { curry, compose, TickSignal, KeySignal } from 'raid-addons'
-import raf from 'raf-stream'
 
 
-
+/**
+ * Central state object
+ */
 let state = new State()
+
 
 /**
  * Model
@@ -23,10 +25,6 @@ const Model = new Immutable.Record({
 })
 
 let mario = state.create( 'mario', new Model({
-  x: 0,
-  y: 0,
-  vx: 0,
-  vy: 0,
   dir: 'right'
 }))
 

@@ -4,12 +4,11 @@ import { render } from 'react-dom'
 import { Observable } from 'rx-lite'
 import Immutable from 'immutable'
 import { State, Signal } from 'raid'
-import { curry } from 'ramda'
+import { curry, compose, TickSignal, KeySignal } from 'raid-addons'
 import raf from 'raf-stream'
-import Quay from 'quay'
 
 
-let quay = new Quay()
+
 let state = new State()
 
 /**
@@ -35,23 +34,19 @@ let mario = state.create( 'mario', new Model({
 /**
  * Key Signal
  */
-const keys = new Signal({
+const keys = KeySignal({
   model: mario
 })
 
-quay.on( '<up>', event => keys.dispatch( '<up>' ) )
-quay.on( '<down>', event => keys.dispatch( '<down>' ) )
-quay.on( '<left>', event => keys.dispatch( '<left>' ) )
-quay.on( '<right>', event => keys.dispatch( '<right>' ) )
 
 /**
  * Key Update
  * ---
- * This example uses a merged observable to mutate state
+ * This example uses merged observables to mutate state
  */
 keys.register( src => {
   const jump = src
-    .filter( event => event.type === '<up>' )
+    .filter( event => event.keys.has( '<up>' ) )
     .filter( event => {
       const { y, vy } = event.model.toJS()
       return !( y && vy )
@@ -60,10 +55,12 @@ keys.register( src => {
       event.model.cursor( 'vy' ).update( vy => 7.5 )
     })
 
-  const walk = src
-    .filter( event => /left|right/.test( event.type ) )
+  const walk = Observable.merge([
+    src.filter( event => event.keys.has( '<left>' ) ),
+    src.filter( event => event.keys.has( '<right>' ) )
+  ])
     .map( event => () => {
-      let left = /left/.test( event.type )
+      let left = event.keys.has( '<left>' )
       event.model.merge({
         vx: left ? -1 : 1,
         dir: left ? 'left' : 'right'
@@ -77,13 +74,9 @@ keys.register( src => {
 /**
  * Tick signal
  */
-const tick = new Signal({
+const tick = TickSignal({
   model: mario
 })
-
-raf().on( 'data', dt => tick.dispatch({
-  delta: dt * .05
-}))
 
 /**
  * Tick Update
@@ -107,20 +100,12 @@ tick.register( src => {
     })
   })
 
-  function compose() {
-    let fns = Array.from( arguments )
-    return function exec( model ) {
-      return fns.reduce( ( m, fn ) => {
-        return fn( m )
-      }, model )
-    }
-  }
-
   const release = src
     .subscribe( event => {
+      let dt = event.delta * .05
       let update = compose(
-        physics( event.delta ),
-        gravity( event.delta )
+        physics( dt ),
+        gravity( dt )
       )
 
       event.model.merge( update( event.model.toJS() ) )

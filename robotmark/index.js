@@ -4,6 +4,8 @@ import { render } from 'react-dom'
 import { Observable } from 'rx-lite'
 import Immutable from 'immutable'
 import { State, Signal } from 'raid'
+import { TickSignal } from 'raid-addons'
+
 
 
 /**
@@ -34,30 +36,46 @@ function createRobot( props ) {
 }
 
 /**
- * Click Signal
+ * Click Update
  */
 const click = new Signal({
   model: list
 })
 
-root.addEventListener( 'click', event => {
+root.addEventListener( 'mousemove', event => {
   const { x, y } = event
   click.dispatch({ x, y })
 })
 
+click.register( src => {
+  src
+    .subscribe( event => {
+      event.model.update( robots => {
+        return robots.concat([
+          createRobot({
+            x: event.x,
+            y: event.y
+          })
+        ])
+      })
+    })
+})
+
 
 /**
- * Update
+ * Tick Update
  */
-click.register( src => {
+const tick = TickSignal({
+  model: list
+})
+
+tick.register( src => {
   src.subscribe( event => {
-    event.model.update( cursor => {
-      return cursor.concat([
-        createRobot({
-          x: event.x,
-          y: event.y
-        })
-      ])
+    let dt = event.delta * .25
+    event.model.update( robots => {
+      return robots.map( robot => {
+        return robot.update( 'rot', rot => rot + dt )
+      })
     })
   })
 })
@@ -86,7 +104,8 @@ const App = props => {
     .map( robot => {
       let style = Object.assign( {}, styles.robot, {
         left: robot.get( 'x' ),
-        top: robot.get( 'y' )
+        top: robot.get( 'y' ),
+        transform: `rotate( ${ robot.get( 'rot' ) }deg )`
       })
 
       return (
@@ -100,6 +119,9 @@ const App = props => {
 
   return (
     <div style={ styles.container }>
+      <div style={{ color: 'white' }}>
+        { `count: ${ props.state.get( 'robots' ).count() }` }
+      </div>
       { robots }
     </div>
   )

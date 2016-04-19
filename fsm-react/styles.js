@@ -42,7 +42,8 @@ const styles = {
     position: 'absolute',
     width: 16,
     height: 16,
-    zIndex: 100
+    zIndex: 100,
+    imageRendering: 'pixelated'
   },
 
   winZone: {
@@ -54,7 +55,6 @@ const styles = {
     background: 'repeating-linear-gradient( -45deg, rgb( 20, 12, 27 ), rgb( 20, 12, 27 ) 30px, rgb( 218, 212, 94 ) 30px, rgb( 218, 212, 94 ) 60px )',
     zIndex: 50
   }
-
 }
 
 export default styles

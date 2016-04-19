@@ -7,6 +7,7 @@ import { STATES } from '../constants'
 
 import start from './start'
 import main from './main'
+import final from './final'
 
 /**
  * Model
@@ -39,7 +40,8 @@ stateSignal.register( src => {
  */
  const states = {
   start,
-  main
+  main,
+  final
 }
 
 export const getState = () => {

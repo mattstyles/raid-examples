@@ -3,6 +3,7 @@ import React, { Component } from 'react'
 import Immutable from 'immutable'
 import state from '../appstate'
 import { curry, compose, KeySignal, TickSignal } from 'raid-addons'
+import { stateSignal } from './'
 import { STATES } from '../constants'
 import styles from '../styles'
 
@@ -23,8 +24,8 @@ const Ship = new Immutable.Record({
 })
 
 const model = state.create( 'ship', new Ship({
-  x: 100,
-  y: 80,
+  x: 20 + ( Math.random() * 200 | 0 ),
+  y: 20 + ( Math.random() * 400 | 0 ),
   rot: Math.random() * 360 | 0
 }))
 
@@ -45,6 +46,13 @@ const tick = TickSignal({ model })
 export default class Main extends Component {
   constructor( props ) {
     super( props )
+
+    model.cursor().merge({
+      x: 20 + ( Math.random() * 200 | 0 ),
+      y: 20 + ( Math.random() * 400 | 0 ),
+      vx: 0,
+      vy: 0
+    })
   }
 
   componentWillMount() {
@@ -93,12 +101,23 @@ export default class Main extends Component {
         })
       })
 
-      src.subscribe( event => {
+      const win = model => {
+        if ( model.x > 540 ) {
+          stateSignal.dispatch({
+            next: STATES.FINAL
+          })
+        }
+
+        return model
+      }
+
+      return src.subscribe( event => {
         let dt = event.delta * .05
         let update = compose(
           momentum( dt ),
           thrust( dt ),
-          drag( dt )
+          drag( dt ),
+          win
         )
 
         event.model.merge( update( event.model.toJS() ) )
@@ -121,13 +140,11 @@ export default class Main extends Component {
 
     return (
       <div style={ styles.fit }>
-        <pre style={{ color: 'white' }}>
-          { JSON.stringify( ship.toJSON(), null, '  ' ) }
-        </pre>
         <img
           src="/fsm-react/assets/ship.png"
           style={ style }
         />
+        <div style={ styles.winZone }></div>
       </div>
     )
   }

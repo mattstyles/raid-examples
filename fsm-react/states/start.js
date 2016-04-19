@@ -5,21 +5,6 @@ import { stateSignal } from './'
 import { STATES } from '../constants'
 import styles from '../styles'
 
-/**
- * Style
- */
-const style = {
-  text: {
-  },
-  start: {
-    fontSize: 20,
-    color: 'rgb( 222, 238, 214 )',
-    position: 'absolute',
-    textAlign: 'center',
-    bottom: 30,
-    width: '100%'
-  }
-}
 
 /**
  * Update Signal
@@ -52,8 +37,8 @@ export default class Start extends Component {
 
   render() {
     return (
-      <div style={ style.text && styles.fit }>
-        <span style={ style.start }>Hit Space To Start</span>
+      <div style={ styles.fit }>
+        <span style={ styles.text }>Hit Space To Start</span>
       </div>
     )
   }

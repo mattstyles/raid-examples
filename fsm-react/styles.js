@@ -1,4 +1,7 @@
 
+import WebFont from 'webfontloader'
+import root from './root'
+
 /**
  * Style objects
  */
@@ -14,7 +17,7 @@ const styles = {
     top: '50%',
     left: '50%',
     transform: 'translate( -50%, -50% )',
-    fontFamily: 'Coolville, monospaced'
+    fontFamily: 'Orbitron, monospaced'
   },
 
   fit: {
@@ -26,9 +29,9 @@ const styles = {
   },
 
   text: {
-    fontSize: 20,
-    lineHeight: 1.4,
-    color: 'rgb( 222, 238, 214 )',
+    fontSize: 18,
+    lineHeight: 2,
+    color: 'rgb( 109, 170, 44 )',
     position: 'absolute',
     textAlign: 'center',
     bottom: 30,
@@ -48,7 +51,7 @@ const styles = {
     top: 0,
     right: 0,
     width: 100,
-    background: 'rgb( 68, 36, 52 )',
+    background: 'repeating-linear-gradient( -45deg, rgb( 20, 12, 27 ), rgb( 20, 12, 27 ) 30px, rgb( 218, 212, 94 ) 30px, rgb( 218, 212, 94 ) 60px )',
     zIndex: 50
   }
 
@@ -60,13 +63,15 @@ export default styles
 /**
  * Append font-face
  */
-let styleEl = document.createElement( 'style' )
-styleEl.type = 'text/css'
-styleEl.textContent = `
-  @font-face: {
-    font-family: 'Coolville',
-    src: url( '/fsm/assets/Coolville.ttf' )
+WebFont.load({
+  google: {
+    families: [ 'Orbitron::latin' ]
+  },
+  timeout: 2000,
+  active: () => {
+    root.style.opacity = 1
+  },
+  inactive: () => {
+    root.style.opacity = 1
   }
-`
-
-document.head.appendChild( styleEl )
+})

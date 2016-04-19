@@ -9,14 +9,6 @@ import start from './start'
 import main from './main'
 
 /**
- * View keys
- */
-const states = {
-  start,
-  main
-}
-
-/**
  * Model
  */
 const StateModel = new Immutable.Record({
@@ -36,6 +28,7 @@ stateSignal.register( src => {
       throw new Error( `Invalid state id: ${ event.next }` )
     }
 
+    // Try changing, Raid.State stops duplicates from emitting
     model.cursor( 'gamestate' )
       .update( current => event.next )
   })
@@ -44,6 +37,11 @@ stateSignal.register( src => {
 /**
  * View Router
  */
+ const states = {
+  start,
+  main
+}
+
 export const getState = () => {
   let currentState = model.cursor( 'gamestate' ).deref()
   let stateID = currentState.replace( /^state:/, '' )

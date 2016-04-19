@@ -9,3 +9,7 @@ import { STATES } from './constants'
 let state = new State()
 
 export default state
+
+
+// @TODO remove
+window.state = state
